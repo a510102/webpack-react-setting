@@ -120,5 +120,11 @@ module.exports = function(_env, argv) {
       },
       returnChunk: 'single',
     },
+    devServe: {
+      compress: true,
+      historyApiFallback: true,
+      open: true,
+      overlay: true,
+    }
   }
 };
