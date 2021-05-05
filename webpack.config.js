@@ -47,7 +47,7 @@ module.exports = function(_env, argv) {
             {
               loader: 'css-loader',
               options: {
-                importLoader: 2,
+                importLoaders: 2,
               }
             },
             "resolve-url-loader",
