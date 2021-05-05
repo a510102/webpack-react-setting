@@ -15,7 +15,7 @@ module.exports = function(_env, argv) {
     devtool: isDevelopment && "cheap-module-source-map",
     entry: './src/index.tsx',
     output: {
-      path: path.resolve(__dirname, 'dist'),
+      path: path.resolve(__dirname, 'build'),
       filename: "assets/js/[name]/[contenthash:8].js",
       publicPath: '/'
     },
@@ -108,7 +108,8 @@ module.exports = function(_env, argv) {
       }),  
       new HTMLWebpackPlugin({
         template: path.resolve(__dirname, "./public/index.html"),
-        inject: true,
+        inject: 'body',
+        scriptLoading: 'blocking'
       }),
       new ForkTsCheckerWebpackPlugin({
         async: false,
@@ -163,10 +164,11 @@ module.exports = function(_env, argv) {
       runtimeChunk: 'single',
     },
     devServer: {
+      contentBase: path.resolve(__dirname, 'dist'),
       compress: true,
       historyApiFallback: true,
       open: true,
-      overlay: true,
+      // overlay: true,
     }
   }
 };
