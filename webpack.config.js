@@ -3,6 +3,8 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const HTMLWebpackPlugin = require('html-webpack-plugin');
 const TerserWebpackPlugin = require('terser-webpack-plugin');
 const OptimizeCssAssertsPlugin = require('optimize-css-assets-webpack-plugin');
+const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
+const WorkboxPlugin = require('workbox-webpack-plugin');
 const webpack = require('webpack');
 
 module.exports = function(_env, argv) {
@@ -11,16 +13,16 @@ module.exports = function(_env, argv) {
 
   return {
     devtool: isDevelopment && "cheap-module-source-map",
-    entry: '../src/index.js',
+    entry: './src/index.tsx',
     output: {
-      path: path.resolve(__dirname, '../dist'),
+      path: path.resolve(__dirname, 'dist'),
       filename: "assets/js/[name]/[contenthash:8].js",
       publicPath: '/'
     },
     module: {
       rules: [
         {
-          test: /\.jsx?$/,
+          test: /\.(js|jsx|ts|tsx)$/,
           exclude: /node_modules/,
           use: {
             loader: 'babel-loader',
@@ -39,6 +41,25 @@ module.exports = function(_env, argv) {
           ]
         },
         {
+          test: /\.s[ac]ss$/,
+          use: [
+            isProduction ? MiniCssExtractPlugin.loader : 'style-loader',
+            {
+              loader: 'css-loader',
+              options: {
+                importLoader: 2,
+              }
+            },
+            "resolve-url-loader",
+            {
+              loader: 'sass-loader',
+              options: {
+                sourceMap: true,
+              },
+            },
+          ],
+        },
+        {
           test: /\.(png|jpg|gif)$/i,
           use: {
             loader: 'url-loader',
@@ -50,7 +71,13 @@ module.exports = function(_env, argv) {
         },
         {
           test: /\.svg$/,
-          use: ['@svgr/webpack'],
+          use: ['@svgr/webpack', {
+            loader: 'url-loader',
+            options: {
+              limit: 0,
+              name: 'static/media/[name].[hash:8].[ext]',
+            },
+          }],
         },
         {
           test: /\.(eot|otf|ttf|woff|woff2)$/,
@@ -59,7 +86,14 @@ module.exports = function(_env, argv) {
             name: 'static/media/[name].[hash:8].[ext]',
           },
         },
+        {
+          test: /\.worker\.js$/,
+          loader: 'worker-loader',
+        },
       ],
+    },
+    resolve: {
+      extensions: ['.js', '.jsx', '.ts', '.tsx']
     },
     plugins: [
       isProduction && 
@@ -73,9 +107,17 @@ module.exports = function(_env, argv) {
         ),
       }),  
       new HTMLWebpackPlugin({
-        template: path.resolve(__dirname, "../public/index.html"),
+        template: path.resolve(__dirname, "./public/index.html"),
         inject: true,
-      })  
+      }),
+      new ForkTsCheckerWebpackPlugin({
+        async: false,
+      }),
+      new WorkboxPlugin.GenerateSW({
+        swDest: 'service-worker.js',
+        clientsClaim: true,
+        skipWaiting: true,
+      }),
     ].filter(Boolean),
     optimization: {
       minimize: isProduction,
@@ -99,7 +141,7 @@ module.exports = function(_env, argv) {
       ],
       splitChunks: {
         chunks: 'all',
-        miniSize: 0,
+        minSize: 0,
         maxInitialRequests: 20,
         maxAsyncRequests: 20,
         cacheGroups: {
@@ -113,14 +155,14 @@ module.exports = function(_env, argv) {
             },
           },
           common: {
-            minChunk: 2,
+            minChunks: 2,
             priority: -10,
           },
         },
       },
-      returnChunk: 'single',
+      runtimeChunk: 'single',
     },
-    devServe: {
+    devServer: {
       compress: true,
       historyApiFallback: true,
       open: true,
